@@ -1,4 +1,8 @@
+<<<<<<< HEAD
  # Python interpreter
+=======
+# Python interpreter
+>>>>>>> Temp
 PYTHON = python3
 
 # Main script
