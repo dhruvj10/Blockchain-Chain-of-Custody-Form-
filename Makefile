@@ -1,8 +1,7 @@
-<<<<<<< HEAD
- # Python interpreter
-=======
+# Executable name
+EXEC = bchoc
+
 # Python interpreter
->>>>>>> Temp
 PYTHON = python3
 
 # Main script
@@ -10,30 +9,25 @@ MAIN = main.py
 
 # Default target
 .PHONY: all
-all: run
+all: $(EXEC)
 
-# Run the project
-.PHONY: run
-run:
-	$(PYTHON) $(MAIN)
+# Create the executable
+$(EXEC): $(MAIN)
+	cp $(MAIN) $(EXEC)
+	chmod +x $(EXEC)
+	dos2unix $(EXEC) || true
 
-# Clean up Python cache files
+# Clean up
 .PHONY: clean
 clean:
 	find . -type f -name "*.pyc" -delete
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	rm -f blockchain.bin
-
-# Install required dependencies
-.PHONY: install
-install:
-	$(PYTHON) -m pip install pycryptodome
+	rm -f $(EXEC)
 
 # Help target
 .PHONY: help
 help:
 	@echo "Available commands:"
-	@echo "  make        : Run the project"
-	@echo "  make clean  : Remove Python cache files and blockchain data"
-	@echo "  make install: Install required dependencies"
+	@echo "  make        : Create the executable"
+	@echo "  make clean  : Remove Python cache files and executable"
 	@echo "  make help   : Show this help message"

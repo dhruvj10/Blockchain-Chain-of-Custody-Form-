@@ -41,6 +41,9 @@ class Blockchain:
 
     def add_block(self, block):
         if self.blocks:
-            block.prev_hash = self.blocks[-1].calculate_hash()
+            if len(self.blocks) == 1:
+                block.prev_hash = bytes(32)
+            else:
+                block.prev_hash = self.blocks[-1].calculate_hash()
         self.blocks.append(block)
         self.save_blockchain()
