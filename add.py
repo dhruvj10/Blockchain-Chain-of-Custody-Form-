@@ -5,6 +5,7 @@ from block import Block
 from blockchain import Blockchain
 import os
 import sys
+from utils import get_role_passwords, validate_password
 
 def parse_add_args(args):
     parser = argparse.ArgumentParser(description='Add evidence items to the blockchain')
@@ -22,18 +23,23 @@ def validate_case_id(case_id):
         exit(1)
 
 def validate_evidence_ids(blockchain, evidence_ids):
-    # Check if any evidence IDs already exist in the blockchain
-    for block in blockchain.blocks:
-        decrypted_values = block.get_decrypted_values("1234")
-        for evidence_id in evidence_ids:
-            try:
-                existing_id = decrypted_values['evidence_id']
-                # Convert both to strings for comparison
-                if str(existing_id) == str(evidence_id):
-                    print(f"Error: Evidence ID {evidence_id} already exists in the blockchain")
-                    exit(1)
-            except (ValueError, TypeError):
-                continue
+    creator_password = get_role_passwords()['creator']
+    existing_ids = set()
+    
+    # Skip the initial block (genesis block)
+    for block in blockchain.blocks[1:]:
+        decrypted_values = block.get_decrypted_values(creator_password)
+        existing_id = decrypted_values.get('evidence_id')
+        
+        if existing_id is not None:
+            existing_ids.add(existing_id)
+    
+    # Check for duplicates in new IDs
+    for new_id in evidence_ids:
+        if int(new_id) in existing_ids:  # Convert new_id to int for comparison
+            print(f"Error: Evidence ID {new_id} already exists in the blockchain", 
+                  file=sys.stderr)
+            sys.exit(1)
 
 def run():
     # Get blockchain file path from environment variable
@@ -56,46 +62,55 @@ def run():
     evidence_ids = []
     for item_id in args.item_ids:
         try:
-            # Ensure it's a valid integer
-            evidence_id = int(item_id)
-            if evidence_id < 0 or evidence_id > 0xFFFFFFFF:  # Check if it fits in 4 bytes
-                print(f"Error: Evidence ID {item_id} must be a 32-bit unsigned integer")
+            item_id_int = int(item_id)
+            if item_id_int < 0 or item_id_int > 0xFFFFFFFF:
+                print(f"Error: Item ID {item_id} must be a 32-bit unsigned integer")
                 exit(1)
-            evidence_ids.append(str(evidence_id))
+            evidence_ids.append(item_id_int)
         except ValueError:
-            print(f"Error: Evidence ID {item_id} must be a valid integer")
+            print(f"Error: Item ID {item_id} must be a valid integer")
             exit(1)
     
     # Validate evidence IDs (check for duplicates)
     validate_evidence_ids(blockchain, evidence_ids)
     
+    # Validate creator password
+    if not validate_password(args.password):
+        print("Error: Invalid password", file=sys.stderr)
+        sys.exit(1)
+    
+    # Make sure we're using the creator password
+    if args.password != get_role_passwords()['creator']:
+        print("Error: Must use creator password for adding items", file=sys.stderr)
+        sys.exit(1)
+    
     # Add each evidence item
     for item_id in evidence_ids:
-        # Create new block
         block = Block(
             case_id=case_id,
             evidence_id=item_id,
             state=b"CHECKEDIN",
             creator=args.creator.encode(),
-            data=b""  # Empty data field
+            data=b""
         )
         
-        # Print block values before adding to blockchain
         print("\nBlock Values:")
         print(f"case_id=b'{block.case_id}'")
         print(f"evidence_id=b'{block.evidence_id}'")
         
-        # Add block to blockchain
+        # Add debug print for decrypted values
+        decrypted = block.get_decrypted_values(args.password)
+        print(f"\nDecrypted Values:")
+        print(f"case_id: {decrypted['case_id']}")
+        print(f"evidence_id: {decrypted['evidence_id']}")
+        
         blockchain.add_block(block)
         
-        # Print the exact value from the chain
-        chain_block = blockchain.blocks[-1]  # Get the last added block
+        chain_block = blockchain.blocks[-1]
         print(f"\nActual chain value for case_id: {chain_block.case_id}")
         
-        # Get current time in ISO format with Z suffix
         timestamp = datetime.datetime.utcnow().isoformat() + "Z"
         
-        # Print output
         print(f"\nAdded item: {item_id}")
         print(f"Status: CHECKEDIN")
         print(f"Time of action: {timestamp}")

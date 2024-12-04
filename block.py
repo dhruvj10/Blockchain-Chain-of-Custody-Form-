@@ -6,6 +6,9 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.padding import PKCS7
 from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
+from utils import get_role_passwords
+
+
 
 class Block:
     FORMAT = '32s d 32s 32s 12s 12s 12s I'
@@ -24,30 +27,27 @@ class Block:
             # Convert case_id to UUID bytes (16 bytes)
             uuid_obj = uuid.UUID(case_id)
             case_id_bytes = uuid_obj.bytes
-            # Encrypt the 16 bytes directly
+            # Encrypt using AES-ECB
             cipher = AES.new(self.encryption_key, AES.MODE_ECB)
-            encrypted_case_id = cipher.encrypt(case_id_bytes)
-            # Store the hex representation
+            encrypted_case_id = cipher.encrypt(self._pad_to_16_bytes(case_id_bytes))
             self.case_id = encrypted_case_id.hex().encode()
         else:
             self.case_id = bytes(32)
         
-        if evidence_id:
-            # Convert evidence_id to 4-byte integer
-            evidence_id_bytes = struct.pack('>I', int(evidence_id))
-            # Pad to 16 bytes for AES encryption
-            padded_evidence_id = evidence_id_bytes.ljust(16, b'\x00')
+        if evidence_id is not None:
+            # Convert integer directly to 16 bytes using big endian
+            item_id_bytes = evidence_id.to_bytes(16, byteorder='big')
             # Encrypt using AES-ECB
             cipher = AES.new(self.encryption_key, AES.MODE_ECB)
-            encrypted_evidence_id = cipher.encrypt(padded_evidence_id)
-            # Store the hex representation
-            self.evidence_id = encrypted_evidence_id.hex().encode()
+            encrypted_evidence_id = cipher.encrypt(item_id_bytes)
+            # Convert to hex string and encode as bytes
+            self.evidence_id = encrypted_evidence_id.hex().encode()[:32]
         else:
             self.evidence_id = bytes(32)
         
         # Handle fixed-length fields
         if state == b"CHECKEDIN":
-            self.state = b"CHECKEDIN\x00"  # Exactly 12 bytes (10 + 2 nulls)
+            self.state = b"CHECKEDIN\x00\x00"  # Exactly 12 bytes (10 + 2 nulls)
         else:
             self.state = b"INITIAL\x00\x00\x00\x00\x00"  # 12 bytes
         self.creator = self._pad_to_12_bytes(creator if creator else b"")
@@ -63,9 +63,9 @@ class Block:
 
     def _pad_to_16_bytes(self, data):
         """Pad data to 16 bytes for AES encryption"""
-        padding_length = 16 - (len(data) % 16)
-        padding = bytes([padding_length] * padding_length)
-        return data + padding
+        if len(data) >= 16:
+            return data[:16]
+        return data + bytes([0] * (16 - len(data)))  # Use zero padding instead of PKCS7
 
     def _pad_to_12_bytes(self, data):
         """Ensure data is exactly 12 bytes"""
@@ -111,32 +111,36 @@ class Block:
         return block
 
     def get_decrypted_values(self, password=None):
-        if password == "1234":
+        # Check if the provided password matches the creator's password
+        if password == get_role_passwords().get('creator'):
             try:
                 # Decrypt case_id
-                decrypted_case_id = self._decrypt_data(self.case_id[:16]).rstrip(b'\0')
+                cipher = AES.new(self.encryption_key, AES.MODE_ECB)
+                encrypted_case_id = bytes.fromhex(self.case_id.decode())
+                decrypted_case_id = cipher.decrypt(encrypted_case_id)
+                case_id_bytes = decrypted_case_id[:16]
+                case_id = str(uuid.UUID(bytes=case_id_bytes))
                 
                 # Decrypt evidence_id
                 cipher = AES.new(self.encryption_key, AES.MODE_ECB)
-                encrypted_bytes = bytes.fromhex(self.evidence_id.decode())
-                decrypted_evidence_id = cipher.decrypt(encrypted_bytes)
-                # Extract the first 4 bytes and convert to integer
-                evidence_id_int = struct.unpack('>I', decrypted_evidence_id[:4])[0]
+                encrypted_evidence_id = bytes.fromhex(self.evidence_id.decode())
+                decrypted_evidence_id = cipher.decrypt(encrypted_evidence_id)
+                # Since we stored it as 16 bytes big endian, read first 4 bytes
+                evidence_id = int.from_bytes(decrypted_evidence_id[-4:], byteorder='big')
                 
                 return {
-                    'case_id': decrypted_case_id.decode().strip(),
-                    'evidence_id': str(evidence_id_int)
+                    'case_id': case_id,
+                    'evidence_id': evidence_id
                 }
             except Exception as e:
-                # If decryption fails, return original values
+                print(f"Decryption error: {str(e)}")
                 return {
-                    'case_id': self.case_id.hex(),
-                    'evidence_id': ''
+                    'case_id': None,
+                    'evidence_id': None
                 }
-        # If password doesn't match, return original values
         return {
-            'case_id': self.case_id.hex(),
-            'evidence_id': ''
+            'case_id': None,
+            'evidence_id': None
         }
 
     def serialize(self):
