@@ -1,4 +1,6 @@
 # CSE469_GroupProject
+# Group #9 - Dhruv Jain, Faris Ghafuri, Samuel Radcliffe, Abhay Bhat.
+
 Make sure to make your own branch and push your code there, then later we can merge on Main. 
 
 Handling the data structure: 
