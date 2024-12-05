@@ -8,8 +8,6 @@ from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
 from utils import get_role_passwords
 
-
-
 class Block:
     FORMAT = '32s d 32s 32s 12s 12s 12s I'
     
