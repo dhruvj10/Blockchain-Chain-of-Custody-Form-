@@ -48,6 +48,10 @@ def run():
     if existing_block.state.rstrip(b'\0') == b"CHECKEDIN":
         print(f"Error: Evidence item {args.item_id} is already checked in", file=sys.stderr)
         sys.exit(1)
+
+    if existing_block.state.rstrip(b'\0') == b"REMOVED":
+        print(f"Error: Evidence item {args.item_id} has been removed", file=sys.stderr)
+        sys.exit(1)
     
     # Get case ID from existing block
     creator_password = get_role_passwords()['creator']  # Get creator password
@@ -70,7 +74,7 @@ def run():
     blockchain.add_block(block)
     
     # Get current time in ISO format with Z suffix
-    timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.datetime.now().isoformat() + "Z"
     
     # Print output in the expected format
     print(f"Case: {case_id}")

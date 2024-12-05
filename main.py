@@ -105,7 +105,16 @@ def main():
         except Exception as e:
             print(f"Error: {str(e)}")
             sys.exit(1)
+    elif command == "remove":
+        try:
+            from remove import run
+            run()
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            sys.exit(1)
     else:
+        print(f"{command == 'remove'}")
         print(f"Unknown command: {command}")
         sys.exit(1)
 

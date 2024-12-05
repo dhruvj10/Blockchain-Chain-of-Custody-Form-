@@ -60,8 +60,12 @@ class Block:
         else:
             self.owner = b""
 
+        if data:
+            self.data = data
+        else:
+            self.data = b""
+
         self.creator = self._pad_to_12_bytes(creator if creator else b"")
-        self.data = b""  # Always empty for new blocks
         self.data_length = 0  # Always 0 for new blocks
 
     def _pad_to_32_bytes(self, data):
