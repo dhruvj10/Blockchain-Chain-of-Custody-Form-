@@ -1,5 +1,5 @@
 import os
-import struct  # Add this import
+import struct
 from block import Block
 
 class Blockchain:
