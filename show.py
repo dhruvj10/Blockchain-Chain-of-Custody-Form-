@@ -1,13 +1,68 @@
 import os
 import sys
+import argparse
 from blockchain import Blockchain
 from utils import validate_password, get_role_passwords, get_owner
 
+def parse_show_args(args):
+    """
+    Parse arguments for the `show` command.
+    """
+    parser = argparse.ArgumentParser(description='Show cases or items')
+    subparsers = parser.add_subparsers(dest="subcommand", required=True, help="Subcommand to execute")
+
+    # Subcommand: show cases
+    cases_parser = subparsers.add_parser("cases", help="Show all cases")
+
+    # Subcommand: show items
+    items_parser = subparsers.add_parser("items", help="Show items in a case")
+    items_parser.add_argument('-c', '--case_id', required=True, help='Case identifier')
+
+    return parser.parse_args(args)
+
+def show_items(case_id):
+    """
+    Logic to display items in a specific case.
+    """
+    blockchain_file = os.getenv('BCHOC_FILE_PATH', 'blockchain.bin')
+
+    # Check if blockchain file exists
+    if not os.path.exists(blockchain_file):
+        print("Error: blockchain file not found")
+        exit(1)
+
+    try:
+        blockchain = Blockchain(blockchain_file)
+        found_items = False
+        
+        print(f"Items in case {case_id}:")
+        for block in blockchain.blocks:
+            if block.case_id == case_id:
+                found_items = True
+                print(f"- Evidence ID: {block.evidence_id}")
+
+        if not found_items:
+            print(f"No items found for case ID: {case_id}")
+            exit(1)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        exit(1)
+
 def run():
-    if sys.argv[2] == 'cases':
+    """
+    Main entry point for the script.
+    """
+    import sys
+    args = parse_show_args(sys.argv[2:])  # Skip the first two arguments (script name and command)
+
+    # Handle the subcommands
+    if args.subcommand == "cases":
         showCases()
-    elif sys.argv[2] == 'items':
-        showItems()
+    elif args.subcommand == "items":
+        show_items(args.case_id)
+
+if __name__ == "__main__":
+    run()
 
 def showCases():
     # Get blockchain file path from environment variable
@@ -37,49 +92,4 @@ def showCases():
             caseList.append(decrypted_values['case_id'])
 
     for case in caseList:
-        print(f"Case:\t{case}")
-
-def showItems():
-    pass
-
-
-# def run():
-#     blockchain = Blockchain()
-#     password = input("Enter password (or press Enter to view encrypted values): ").strip()
-    
-#     for i, block in enumerate(blockchain.blocks):
-#         print(f"\nBlock {i}:")
-#         values = block.get_decrypted_values(password)
-        
-#         # Display timestamp in human-readable format
-#         timestamp = datetime.fromtimestamp(block.timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        
-#         print(f"Timestamp: {timestamp}")
-#         print(f"Previous Hash: {binascii.hexlify(block.prev_hash).decode()}")
-#         print(f"Case ID: {values['case_id']}")
-#         print(f"Evidence ID: {values['evidence_id']}")
-        
-#         # Decode and display text fields, stripping null bytes
-#         try:
-#             state = block.state.decode('utf-8').rstrip('\0')
-#         except UnicodeDecodeError:
-#             state = binascii.hexlify(block.state).decode()
-#         print(f"State: {state}")
-        
-#         try:
-#             creator = block.creator.decode('utf-8').rstrip('\0')
-#         except UnicodeDecodeError:
-#             creator = binascii.hexlify(block.creator).decode()
-#         print(f"Creator: {creator}")
-        
-#         try:
-#             owner = block.owner.decode('utf-8').rstrip('\0')
-#         except UnicodeDecodeError:
-#             owner = binascii.hexlify(block.owner).decode()
-#         print(f"Owner: {owner}")
-        
-#         try:
-#             data = block.data.decode('utf-8').rstrip('\0')
-#         except UnicodeDecodeError:
-#             data = binascii.hexlify(block.data).decode()
-#         print(f"Data: {data}")
+        print(f"{case}")
