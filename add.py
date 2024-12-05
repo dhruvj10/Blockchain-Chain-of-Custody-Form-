@@ -5,7 +5,7 @@ from block import Block
 from blockchain import Blockchain
 import os
 import sys
-from utils import get_role_passwords, validate_password
+from utils import get_role_passwords, validate_password, get_owner
 
 def parse_add_args(args):
     parser = argparse.ArgumentParser(description='Add evidence items to the blockchain')
@@ -85,7 +85,10 @@ def run():
     if args.password != get_role_passwords()['creator']:
         print("Error: Must use creator password for adding items", file=sys.stderr)
         sys.exit(1)
-    
+
+    # get owner
+    owner = get_owner(args.password)
+
     # Add each evidence item
     for item_id in evidence_ids:
         block = Block(
@@ -93,6 +96,7 @@ def run():
             evidence_id=item_id,
             state=b"CHECKEDIN",
             creator=args.creator.encode(),
+            owner=owner,
             data=b""
         )
         

@@ -8,6 +8,8 @@ from cryptography.hazmat.backends import default_backend
 from Crypto.Cipher import AES
 from utils import get_role_passwords
 
+
+
 class Block:
     FORMAT = '32s d 32s 32s 12s 12s 12s I'
     
@@ -44,12 +46,21 @@ class Block:
             self.evidence_id = bytes(32)
         
         # Handle fixed-length fields
-        if state == b"CHECKEDIN":
-            self.state = b"CHECKEDIN\x00\x00"  # Exactly 12 bytes (10 + 2 nulls)
+        # if state == b"CHECKEDIN":
+        #     self.state = b"CHECKEDIN\x00\x00"  # Exactly 12 bytes (10 + 2 nulls)
+        # elif state == b'CHECKEDOUT':
+        #     self.state = b'CHECKEDOUT\x00'
+        if state:
+            self.state = state
         else:
             self.state = b"INITIAL\x00\x00\x00\x00\x00"  # 12 bytes
+
+        if owner:
+            self.owner = owner
+        else:
+            self.owner = b""
+
         self.creator = self._pad_to_12_bytes(creator if creator else b"")
-        self.owner = b"\0" * 12  # Always null bytes for new blocks
         self.data = b""  # Always empty for new blocks
         self.data_length = 0  # Always 0 for new blocks
 

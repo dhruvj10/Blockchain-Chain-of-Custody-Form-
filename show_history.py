@@ -2,6 +2,7 @@ import argparse
 import os
 from blockchain import Blockchain
 from datetime import datetime
+from utils import get_role_passwords, validate_password
 
 def parse_history_args(args):
     parser = argparse.ArgumentParser(description='Show history of evidence items')
@@ -29,19 +30,23 @@ def show_item_history(item_id, password):
         
         # Find all entries for the specified item_id
         found_entries = False
+        creator_password = get_role_passwords()['creator']  # Get creator password
+        
         for block in blockchain.blocks:
             # Skip genesis block
             if block.state == b"INITIAL\0\0\0\0\0":
                 continue
                 
+            print(f"prev_hash:\t{block.prev_hash}\ntimestamp:\t{block.timestamp}\ncase_id:\t{block.case_id}\nevidence_id:\t{block.evidence_id}\nstate:\t\t{block.state}\ncreator:\t{block.creator}\nowner:\t\t{block.owner}\ndata:\t\t{block.data}\n")
+
             # Decrypt and check if this block matches our item_id
-            decrypted_values = block.get_decrypted_values(password)
-            if decrypted_values['evidence_id'] == str(item_id):
+            decrypted_values = block.get_decrypted_values(creator_password)
+            if int(decrypted_values['evidence_id']) == int(item_id):
                 found_entries = True
                 # Format the output
                 timestamp = format_timestamp(block.timestamp)
-                state = block.state.rstrip(b'\x00').decode()
-                creator = block.creator.rstrip(b'\x00').decode()
+                state = block.state
+                creator = block.creator
                 
                 # Print entry details
                 print(f"State: {state}")
@@ -49,8 +54,9 @@ def show_item_history(item_id, password):
                 if creator:
                     print(f"Creator/Owner: {creator}")
                 if block.data:
-                    print(f"Additional data: {block.data.decode().rstrip('\x00')}")
+                    print("Additional data: " + block.data.decode().rstrip('\x00'))
                 print()  # Empty line between entries
+
         
         if not found_entries:
             print(f"No history found for evidence item: {item_id}")

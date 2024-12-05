@@ -4,7 +4,7 @@ import sys
 from block import Block
 from blockchain import Blockchain
 import os
-from utils import get_role_passwords, validate_password
+from utils import get_role_passwords, validate_password, get_owner
 
 def parse_checkout_args(args):
     parser = argparse.ArgumentParser(description='Checkout evidence items from the blockchain')
@@ -18,7 +18,9 @@ def find_evidence_item(blockchain, item_id):
     
     # Skip genesis block and look for the most recent state of the item
     for block in blockchain.blocks[1:]:
+        print(creator_password)
         decrypted_values = block.get_decrypted_values(creator_password)  # Use creator password
+        print(decrypted_values)
         print(f"\nSearching block - Decrypted values: {decrypted_values}")
         if decrypted_values.get('evidence_id') is not None:
             print(f"Comparing {decrypted_values['evidence_id']} with {item_id}")
@@ -59,13 +61,16 @@ def run():
     decrypted_values = existing_block.get_decrypted_values(creator_password)  # Use creator password
     case_id = decrypted_values['case_id']
     
+    owner = get_owner(args.password)
+
     # Create new checkout block
     block = Block(
+        prev_hash=bytes(32),
         case_id=case_id,
         evidence_id=args.item_id,
         state=b"CHECKEDOUT",
         creator=existing_block.creator,
-        owner=args.password.encode(),
+        owner=owner,
         data=b""
     )
     
@@ -73,7 +78,7 @@ def run():
     blockchain.add_block(block)
     
     # Get current time in ISO format with Z suffix
-    timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.datetime.now().isoformat() + "Z"
     
     # Print output in the expected format
     print(f"Case: {case_id}")

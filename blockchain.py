@@ -37,13 +37,14 @@ class Blockchain:
     def save_blockchain(self):
         with open(self.filename, 'wb') as f:
             for block in self.blocks:
-                f.write(block.serialize())
+                serializedBlock = block.serialize()
+                f.write(serializedBlock)
 
     def add_block(self, block):
         if self.blocks:
             if len(self.blocks) == 1:
                 block.prev_hash = bytes(32)
-            else:
+            elif not block.prev_hash:
                 block.prev_hash = self.blocks[-1].calculate_hash()
         self.blocks.append(block)
         self.save_blockchain()

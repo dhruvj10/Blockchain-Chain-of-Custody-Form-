@@ -4,7 +4,7 @@ import sys
 from block import Block
 from blockchain import Blockchain
 import os
-from utils import validate_password, get_role_passwords
+from utils import validate_password, get_role_passwords, get_owner
 
 def parse_checkin_args(args):
     parser = argparse.ArgumentParser(description='Checkin evidence items to the blockchain')
@@ -54,13 +54,15 @@ def run():
     decrypted_values = existing_block.get_decrypted_values(creator_password)  # Use creator password
     case_id = decrypted_values['case_id']
     
+    owner = get_owner(args.password)
+
     # Create new checkin block
     block = Block(
         case_id=case_id,
         evidence_id=args.item_id,
         state=b"CHECKEDIN",
         creator=existing_block.creator,
-        owner=args.password.encode(),
+        owner=owner,
         data=b""
     )
     

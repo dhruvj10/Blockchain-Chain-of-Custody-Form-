@@ -12,3 +12,16 @@ def get_role_passwords():
 def validate_password(password):
     valid_passwords = get_role_passwords().values()
     return password in valid_passwords
+
+def get_owner(password):
+    owners = get_role_passwords()
+    owner = ""
+    for singleOwner in owners:
+        if owners[singleOwner] == password:
+            owner = singleOwner.upper()
+    owner = owner.encode()
+
+    if owner == b'CREATOR':
+        owner = b""
+
+    return owner
