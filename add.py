@@ -10,7 +10,7 @@ from utils import get_role_passwords, validate_password
 def parse_add_args(args):
     parser = argparse.ArgumentParser(description='Add evidence items to the blockchain')
     parser.add_argument('-c', '--case_id', required=True, help='Case identifier (UUID)')
-    parser.add_argument('-i', '--item_ids', required=True, nargs='+', help='Evidence item identifier(s)')
+    parser.add_argument('-i', '--item_ids', required=True, action='append', help='Evidence item identifier(s)')
     parser.add_argument('-g', '--creator', required=True, help='Creator of the evidence item')
     parser.add_argument('-p', '--password', required=True, help='Password for the creator')
     return parser.parse_args(args)
@@ -60,6 +60,7 @@ def run():
     
     # Convert evidence IDs to integers and validate
     evidence_ids = []
+    print(args.item_ids)
     for item_id in args.item_ids:
         try:
             item_id_int = int(item_id)
@@ -67,6 +68,7 @@ def run():
                 print(f"Error: Item ID {item_id} must be a 32-bit unsigned integer")
                 exit(1)
             evidence_ids.append(item_id_int)
+            print(item_id_int)
         except ValueError:
             print(f"Error: Item ID {item_id} must be a valid integer")
             exit(1)
@@ -109,7 +111,7 @@ def run():
         chain_block = blockchain.blocks[-1]
         print(f"\nActual chain value for case_id: {chain_block.case_id}")
         
-        timestamp = datetime.datetime.utcnow().isoformat() + "Z"
+        timestamp = datetime.datetime.now().isoformat() + "Z"
         
         print(f"\nAdded item: {item_id}")
         print(f"Status: CHECKEDIN")
