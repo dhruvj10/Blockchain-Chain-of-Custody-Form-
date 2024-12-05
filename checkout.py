@@ -49,8 +49,8 @@ def run():
         print(f"Error: Evidence item {args.item_id} is already checked out", file=sys.stderr)
         sys.exit(1)
 
-    # Check if item is already checked out
-    if existing_block.state.rstrip(b'\0') == b"REMOVED":
+    # Check if item is already removed
+    if existing_block.state.rstrip(b'\0') in [b'DESTROYED', b'REMOVED', b'DISPOSED', b'RELEASED']:
         print(f"Error: Evidence item {args.item_id} has been removed", file=sys.stderr)
         sys.exit(1)
     

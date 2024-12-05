@@ -31,6 +31,11 @@ def find_evidence_item(blockchain, item_id):
 def run():
     blockchain_file = os.getenv('BCHOC_FILE_PATH', 'blockchain.bin')
     args = parse_remove_args(sys.argv[2:])
+
+    if args.why not in ['DESTROYED', 'REMOVED', 'DISPOSED', 'RELEASED']:
+        print("Error: Invalid reason", file=sys.stderr)
+        sys.exit(1)
+        
     
     # Validate password
     if not validate_password(args.password):
@@ -48,6 +53,16 @@ def run():
     if not existing_block:
         print(f"Error: Evidence item {args.item_id} not found", file=sys.stderr)
         sys.exit(1)
+
+    # Check if item is already checked out
+    if existing_block.state.rstrip(b'\0') == b"CHECKEDOUT":
+        print(f"Error: Evidence item {args.item_id} is already checked out", file=sys.stderr)
+        sys.exit(1)
+
+    # Check if item is already removed
+    if existing_block.state.rstrip(b'\0') in [b'DESTROYED', b'REMOVED', b'DISPOSED', b'RELEASED']:
+        print(f"Error: Evidence item {args.item_id} has been removed", file=sys.stderr)
+        sys.exit(1)
     
     # Get case ID from existing block
     creator_password = get_role_passwords()['creator']  # Get creator password
@@ -59,10 +74,10 @@ def run():
     block = Block(
         case_id=case_id,
         evidence_id=args.item_id,
-        state=b"REMOVED",
+        state=args.why.encode(),
         creator=existing_block.creator,
-        owner=owner,
-        data=args.why.encode()
+        owner=existing_block.owner,
+        data=b""
     )
     
     # Add block to blockchain

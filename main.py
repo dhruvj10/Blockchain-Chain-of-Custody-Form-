@@ -81,9 +81,17 @@ def main():
         except Exception as e:
             print(f"Error: {str(e)}")
             sys.exit(1)
-    elif command == 'show':
+    elif command == 'dump':
         try:
             from show_history import run
+            run()
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            sys.exit(1)
+    elif command == 'show':
+        try:
+            from show import run
             run()
             sys.exit(0)
         except Exception as e:
