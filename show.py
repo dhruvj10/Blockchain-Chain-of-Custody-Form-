@@ -5,10 +5,8 @@ from datetime import datetime
 from blockchain import Blockchain
 from utils import validate_password, get_role_passwords, get_owner
 
+# Function generated with the help of ChatGPT, OpenAI
 def parse_show_args(args):
-    """
-    Parse arguments for the `show` command.
-    """
     parser = argparse.ArgumentParser(description='Show cases or items')
     subparsers = parser.add_subparsers(dest="subcommand", required=True, help="Subcommand to execute")
 
@@ -159,13 +157,8 @@ def showHistory(case_id = None, item_id = None, reverse = None, password=None, n
 
 
 def run():
-    """
-    Main entry point for the script.
-    """
-    import sys
-    args = parse_show_args(sys.argv[2:])  # Skip the first two arguments (script name and command)
+    args = parse_show_args(sys.argv[2:])
 
-    # Handle the subcommands
     if args.subcommand == "cases":
         showCases()
     elif args.subcommand == "items":
