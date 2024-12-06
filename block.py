@@ -113,7 +113,7 @@ class Block:
         """Creates the genesis block with specified initial values"""
         block = cls()
         block.prev_hash = bytes(32)  # 32 bytes of zeros
-        block.timestamp = 0  # Set to 0 instead of current time
+        block.timestamp = time.time()  # Set to 0 instead of current time
         block.case_id = b"0" * 32  # 32 bytes of ASCII '0' characters
         block.evidence_id = b"0" * 32  # 32 bytes of ASCII '0' characters
         block.state = b"INITIAL\0\0\0\0\0"  # Exactly as specified
