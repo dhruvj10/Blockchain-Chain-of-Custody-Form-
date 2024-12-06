@@ -16,14 +16,12 @@ def verify_blockchain():
             print("Error: blockchain is empty")
             exit(1)
         
-        # Track state of each evidence item
-        evidence_states = {}  # Dictionary to track the latest state of each item
-        creator_password = get_role_passwords()['creator']
+        evidenceState = {}  
+        onwerPass = get_role_passwords()['creator']
         
-        # Define terminal states
-        terminal_states = [b"DESTROYED", b"DISPOSED", b"RELEASED"]
+        termStates = [b"DESTROYED", b"DISPOSED", b"RELEASED"]
         
-        # Verify the initial block (genesis block)
+        # Verify  (genesis block)
         genesis_block = blockchain.blocks[0]
         if not (genesis_block.prev_hash == bytes(32) and
                 genesis_block.state.rstrip(b'\0') == b"INITIAL" and
@@ -33,62 +31,62 @@ def verify_blockchain():
             print("Error: invalid genesis block")
             exit(1)
         
-        # Verify chain of hashes and block integrity
+        
         for i in range(1, len(blockchain.blocks)):
             current_block = blockchain.blocks[i]
             previous_block = blockchain.blocks[i-1]
             
-            # Verify previous hash matches
+            
             if current_block.prev_hash != previous_block.calculate_hash():
                 print(f"Error: invalid hash chain at block {i}")
                 exit(1)
             
-            # Verify block state is valid
+            
             valid_states = [b"CHECKEDIN\x00\x00", b"CHECKEDOUT\x00", b"DISPOSED\x00\x00\x00", b"DESTROYED\x00\x00", b"RELEASED\x00\x00\x00"]
             if current_block.state.rstrip(b'\0') not in [state.rstrip(b'\0') for state in valid_states]:
                 print(f"Error: invalid state at block {i}")
                 exit(1)
             
-            # Get evidence ID
-            decrypted_values = current_block.get_decrypted_values(creator_password)
+           
+            decrypted_values = current_block.get_decrypted_values(onwerPass)
             evidence_id = decrypted_values['evidence_id']
             current_state = current_block.state.rstrip(b'\0')
             
-            # Check for invalid state transitions
-            if evidence_id in evidence_states:
-                last_state = evidence_states[evidence_id]
+           
+            if evidence_id in evidenceState:
+                last_state = evidenceState[evidence_id]
                 
-                # Check if item is being removed after already being in a terminal state
-                if last_state in terminal_states and current_state in terminal_states:
+              #check term state 
+                if last_state in termStates and current_state in termStates:
                     print(f"Error: evidence item {evidence_id} was removed twice")
                     exit(1)
                 
-                # If item was removed, it cannot transition to any other state
-                if last_state in terminal_states and current_state in [b"CHECKEDIN", b"CHECKEDOUT"]:
+                # If item was removed cannot trac to other state 
+                if last_state in termStates and current_state in [b"CHECKEDIN", b"CHECKEDOUT"]:
                     print(f"Error: evidence item {evidence_id} was checked in or out after being removed")
                     exit(1)
                 
-                # If item is already checked in, it cannot be checked in again without being checked out
+                # If item is already check in 
                 if last_state == b"CHECKEDIN" and current_state == b"CHECKEDIN":
                     print(f"Error: evidence item {evidence_id} was checked in twice without a checkout")
                     exit(1)
                 
-                # If item is already checked out, it cannot be checked out again without being checked in
+                # If item is already check out
                 if last_state == b"CHECKEDOUT" and current_state == b"CHECKEDOUT":
                     print(f"Error: evidence item {evidence_id} was checked out twice without a checkin")
                     exit(1)
             
-            # Update evidence state
-            evidence_states[evidence_id] = current_state
+         
+            evidenceState[evidence_id] = current_state
             
-            # Verify fixed-length fields
+          
             if (len(current_block.creator) != 12 or
                 len(current_block.owner) != 12 or
                 len(current_block.state) != 12):
                 print(f"Error: invalid field length at block {i}")
                 exit(1)
             
-            # Verify data length matches actual data
+         
             if len(current_block.data) != current_block.data_length:
                 print(f"Error: invalid data length at block {i}")
                 exit(1)

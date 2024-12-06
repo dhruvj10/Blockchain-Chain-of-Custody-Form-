@@ -13,11 +13,5 @@ brew install cryptography
 ```
 I would suggest using brew to install the dependencies, since the makefile will be changing. 
 
-Also to initialize the blockchain, run: 
-```
-init 
-```
-and to show the blockchain, run: 
-```
-show 
-```
+The version of crytogrphy used is 3.4.8. 
+if testing on linux use pycryptodome instead of cryptography. 
