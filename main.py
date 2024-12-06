@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#Driver File - runs the program 
 import os
 import importlib
 import logging
@@ -17,9 +18,7 @@ def load_modules():
     return modules
 
 def main():
-    # Set up logging
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
+    
     # Get command from command line arguments
     if len(sys.argv) < 2:
         print("Error: No command provided")
